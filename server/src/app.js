@@ -25,8 +25,22 @@ const app = express();
 // ============================================
 
 // 1. CORS: Allow our frontend (React) to talk to this backend
-//    Without this, browsers will block requests from localhost:5173 → localhost:5000
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+  })
+);
 
 // 2. Body Parser: Convert incoming JSON requests to JavaScript objects
 //    10mb limit to handle large resume text and interview data
@@ -35,6 +49,10 @@ app.use(express.json({ limit: '10mb' }));
 // ============================================
 // ROUTES
 // ============================================
+
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'API is running' });
+});
 
 // Mount all API routes under /api
 // /api/auth      → authentication routes
